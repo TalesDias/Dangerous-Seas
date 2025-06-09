@@ -19,21 +19,30 @@ const OBJECTIVE    = {x:undefined, y:undefined}
 const MIN_DIST_OBJ = 30
 
 // Whirlpools constants
-const N_WP       = 15
+const N_WP       = 25
 let   whirlpools = []
-const POWER_WP   = 100
+const POWER_WP   = 60
 const DECAY_WP   = 0.08 // should be smaller than 1
-const AREA_WP    = 8
+const AREA_WP    = 10
 
 // Other heuristics constants
-const FEAR_WP    = 150
+const FEAR_WP    = 40 
 const STEP_COST  = 1
+
+// Note: In order to the heuristics to be admissible, 
+// in all cases we must have:
+// FEAR_WP < POWER_WP, for values lower than AREA_WP
+// If AREA_WP has a bigger value however (like 20, or 40),
+// we will probably need FEAR_WP <<< POWER_WP  
 
 // Data structures for the tiles
 let openPQ     = null
 let openSet    = null
 let closedSet  = null
 let resultPath = []
+
+const genSeed  = MurmurHash3("lost2")
+const rand_num = SimpleFastCounter32(genSeed(), genSeed()) 
 
 // randomizes the search elements and 
 // initializes some variables
@@ -279,7 +288,7 @@ function calcCosts(tile, originTile){
     // calculated and stored in this.cost
     tile.cost = tile.cost + (originTile.cost + STEP_COST)
 
-    let dist = Math.pow(euclDist(tile, OBJECTIVE), 1.5)
+    let dist = Math.pow(euclDist(tile, OBJECTIVE), 3)
     let fear = 0
     for (const w of whirlpools){
         fear += FEAR_WP/(Math.pow(euclDist(tile, w), 4) + 1)
@@ -342,15 +351,15 @@ function randomPos(OccupiedTilesSet = null){
 
     if(OccupiedTilesSet === null){
         
-        rand_x = Math.ceil(Math.random() * (N_SQ_W - 1))
-        rand_y = Math.ceil(Math.random() * (N_SQ_H - 1))
+        rand_x = Math.ceil(rand_num() * (N_SQ_W - 1))
+        rand_y = Math.ceil(rand_num() * (N_SQ_H - 1))
 
         return [rand_x, rand_y]
     }
 
     do{
-        rand_x = Math.ceil(Math.random() * (N_SQ_W - 1))
-        rand_y = Math.ceil(Math.random() * (N_SQ_H - 1))
+        rand_x = Math.ceil(rand_num() * (N_SQ_W - 1))
+        rand_y = Math.ceil(rand_num() * (N_SQ_H - 1))
 
         t = grid[rand_x][rand_y]
 
